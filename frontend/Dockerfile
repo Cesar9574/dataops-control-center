@@ -6,6 +6,8 @@ COPY package*.json ./
 
 RUN npm install
 
+RUN npm install @tailwindcss/postcss autoprefixer
+
 COPY . .
 
 EXPOSE 3000

@@ -1,19 +1,14 @@
 const cron = require('node-cron');
 const pool = require('../config/database');
 
-// =============================================
-// MOTOR DE ALERTAS - Se ejecuta cada 2 minutos
-// =============================================
 cron.schedule('*/2 * * * *', async () => {
-  console.log('🚨 Evaluando reglas de alertas...');
+  console.log('Evaluando reglas de alertas...');
 
   try {
-    // Obtener reglas activas
     const rules = await pool.query(`
       SELECT * FROM alert_rules WHERE activa = true
     `);
 
-    // Obtener ultimas metricas de cada BD
     const metrics = await pool.query(`
       SELECT DISTINCT ON (db_id)
         m.*,
@@ -29,7 +24,6 @@ cron.schedule('*/2 * * * *', async () => {
         let triggered = false;
         let valor_actual = 0;
 
-        // Evaluar cada condicion
         if (rule.condicion.includes('cpu') && metric.cpu > rule.umbral) {
           triggered = true;
           valor_actual = metric.cpu;
@@ -48,7 +42,6 @@ cron.schedule('*/2 * * * *', async () => {
         }
 
         if (triggered) {
-          // Verificar si ya existe alerta abierta para esta condicion
           const existing = await pool.query(`
             SELECT id FROM alert_log
             WHERE db_id = $1 
@@ -57,7 +50,6 @@ cron.schedule('*/2 * * * *', async () => {
           `, [metric.db_id, rule.nombre]);
 
           if (existing.rows.length === 0) {
-            // Registrar nueva alerta
             await pool.query(`
               INSERT INTO alert_log 
                 (db_id, condicion, severidad, motor_afectado, estado, mensaje)
@@ -67,16 +59,15 @@ cron.schedule('*/2 * * * *', async () => {
               rule.nombre,
               rule.severidad,
               metric.db_nombre,
-              `${rule.nombre}: valor actual ${valor_actual.toFixed(2)} supera umbral ${rule.umbral}`
+              `${rule.nombre}: valor actual ${parseFloat(valor_actual).toFixed(2)} supera umbral ${rule.umbral}`
             ]);
 
-            console.log(`🚨 [${rule.severidad}] Alerta generada: ${rule.nombre} en ${metric.db_nombre}`);
+            console.log(`[${rule.severidad}] Alerta generada: ${rule.nombre} en ${metric.db_nombre}`);
           }
         }
       }
     }
 
-    // Verificar backups fallidos
     const failedBackups = await pool.query(`
       SELECT b.*, c.nombre 
       FROM backup_history b
@@ -102,7 +93,7 @@ cron.schedule('*/2 * * * *', async () => {
         `, [
           backup.db_id,
           backup.nombre,
-          `Backup ${backup.tipo} falló en ${backup.nombre}`
+          `Backup ${backup.tipo} fallo en ${backup.nombre}`
         ]);
 
         console.log(`[Critical] Backup fallido detectado en ${backup.nombre}`);
@@ -114,4 +105,4 @@ cron.schedule('*/2 * * * *', async () => {
   }
 });
 
-console.log('Motor de Alertas programado — evalúa cada 2 minutos');
+console.log('Motor de Alertas programado - evalua cada 2 minutos');

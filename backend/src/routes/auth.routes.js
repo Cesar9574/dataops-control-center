@@ -9,7 +9,7 @@ const ADMIN_USER = {
   id: 1,
   username: 'admin',
   // password: admin123
-  password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+  password: '$2b$10$xtqJ3oIDfcmeMq8nDNR.aOvZgNNPwVld0.sErCCKzumOBmbr70zJm',
   role: 'admin'
 };
 
